@@ -43,3 +43,6 @@ TODO:
 
 - [ ] 目前的 QR 分解、SVD分解和方程组求解只支持 *矩阵行数大于列数* 的情况，待扩展
 
+
+详解请见 [博客](https://longer95479.github.io/Handcraft-matrix-lib)
+
