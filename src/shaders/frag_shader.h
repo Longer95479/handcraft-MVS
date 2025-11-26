@@ -1,21 +1,19 @@
-// mkdir output
-// mkdir build
-// cd output
-// g++ -O3 -o ../build/shader ../src/shader2.cpp
-// ../build/shader
-// ffmpeg -i output%02d.ppm -r 60 output.mp4
+#ifndef FRAG_SHADER_H
+#define FRAG_SHADER_H
 
 #include <iostream>
 #include <cmath>
 
-
-double abs(double x) { return fabs(x); }
-
+void fragShader(double T, int frame_size, int w, int h, const auto& lambda);
 
 struct vec4;
 struct vec3;
 struct vec2;
 
+
+//-----------------------------------------------------------------------------//
+
+double abs(double x) { return fabs(x); }
 
 struct vec4 {
   double x, y, z, w;
@@ -46,10 +44,10 @@ struct vec3 {
   vec3(): x(.0), y(.0), z(.0) {}
   vec3(double _x, double _y, double _z): x(_x), y(_y), z(_z) {}
 
-  vec2 xz();
-  vec3 zxy();
-  vec3 xyy();
-  vec3 yxy();
+  vec2 xz() const;
+  vec3 zxy() const;
+  vec3 xyy() const;
+  vec3 yxy() const;
 };
 
 vec3 operator + (const vec3& a, const vec3& b) { return vec3(a.x + b.x, a.y + b.y, a.z + b.z); }
@@ -82,9 +80,9 @@ struct vec2 {
   vec2(): x(.0), y(.0) {}
   vec2(double _x, double _y): x(_x), y(_y) {}
 
-  vec2 yx();
-  vec3 xyy();
-  vec4 xyyx();
+  vec2 yx() const;
+  vec3 xyy() const;
+  vec4 xyyx() const;
 
 };
 
@@ -106,58 +104,38 @@ vec2 tanh(const vec2& a) { return vec2(tanh(a.x), tanh(a.y)); }
 double length(const vec2& a) { return sqrt(dot(a, a)); }
 
 
-vec2 vec2::yx() { return vec2(y, x); }
-vec3 vec2::xyy() { return vec3(x, y, y); }
-vec4 vec2::xyyx() { return vec4(x, y, y, x); }
+vec2 vec2::yx() const { return vec2(y, x); }
+vec3 vec2::xyy() const { return vec3(x, y, y); }
+vec4 vec2::xyyx() const { return vec4(x, y, y, x); }
 
-vec2 vec3::xz() { return vec2(x, z); }
-vec3 vec3::zxy() { return vec3(z, x, y); }
-vec3 vec3::xyy() { return vec3(x, y, y); }
-vec3 vec3::yxy() { return vec3(y, x, y); }
+vec2 vec3::xz() const { return vec2(x, z); }
+vec3 vec3::zxy() const { return vec3(z, x, y); }
+vec3 vec3::xyy() const { return vec3(x, y, y); }
+vec3 vec3::yxy() const { return vec3(y, x, y); }
 
-
-int main(int argc, char**argv)
+void fragShader(double T, int frame_size, int w, int h, const auto& lambda)
 {
   char buf[256];
-  for (int j = 0; j < 60; j++) {
+  for (int j = 0; j < frame_size; j++) {
     snprintf(buf, sizeof(buf), "output%02d.ppm", j);
     const char* output_path = buf;
     FILE* f = fopen(output_path, "wb");
-  
-    int w = 16 * 60;
-    int h = 9 * 60;
   
     fprintf(f, "P6\n");
     fprintf(f, "%d %d\n", w, h);
     fprintf(f, "255\n");
 
-    double t = (double) j / 60;
+    double t = (double) j * T / frame_size;
     vec2 r((double)w, (double)h);
 
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
         vec2 FC((double)x, (double)y);
-        vec3 rgb((double)x, (double)y, 122.0);
+        vec3 rgb((double)x, (double)y, j);
         vec4 o;
 
-        // plasma
-        // vec2 p=(FC*2.-r)/r.y,l,i,v=p*(l+=4.-4.*abs(.7-dot(p,p)));for(;i.y++<8.;o+=(sin(v.xyyx())+1.)*abs(v.x-v.y))v+=cos(v.yx()*i.y+i+t)/i.y+.7;o=tanh(5.*exp(l.x-4.-p.y*vec4(-1,1,2,0))/o);
+        lambda(t, j, r, FC, rgb, o);
         
-        // cyberspace 1
-        // for(double i=0,z=0,d=0;z+i++<7e1;o+=vec4(z,1,9,1)/d)
-        // {
-        //   vec3 p=abs(z*normalize(rgb*2.-r.xyy()));
-        //   p.z+=t*5.;p+=sin(p+p);
-        //   for(d=0.;d++<9.;p+=.4*cos(round(.2*d*p)+.2*t).zxy());
-        //   z+=d=.1*sqrt(length(p.xyy()*p.yxy()));
-        // }
-        // o=tanh(o/7e3);
-
-        // cyberspace 2
-        for(float i=0,z=0,d=0;z+i++<8e1;o+=vec4(z,4,1,1)/d)
-        {vec3 p=z*normalize(rgb*2.-r.xyy());p.z+=t/.1;p-=sin(p+p);for(d=0.;d++<9.;p+=.7*cos(round(.2*d*p)+t*.5).zxy());z+=d=.1*sqrt(length(p.xyy()*p.yxy()));}
-        o=tanh(o/5e3);
-
         fputc(o.x * 255, f);
         fputc(o.y * 255, f);
         fputc(o.z * 255, f);
@@ -166,8 +144,8 @@ int main(int argc, char**argv)
   
     fclose(f);
     printf("generated ppm file: %s\n", output_path);
-
   }
-  return 0;
 }
+
+#endif
 

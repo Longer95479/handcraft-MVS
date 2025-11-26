@@ -1,9 +1,12 @@
-// Type your code here, or load an example.
+#ifndef MY_MATRIX_LIB_H
+#define MY_MATRIX_LIB_H
 
 #include <iostream>
 #include <vector>
 #include <cmath>
 #include <map>
+
+namespace Loong {
 
 template<typename T, int rows, int cols>
 class Matrix {
@@ -147,7 +150,7 @@ public:
     }
  
 
-    Matrix operator + (const Matrix<T, rows, cols>& other)
+    Matrix operator + (const Matrix<T, rows, cols>& other) const
     {
         Matrix<T, rows, cols> tmp_mat;
         for (int i = 0; i < rows; i++) {
@@ -158,7 +161,7 @@ public:
         return tmp_mat;
     }
 
-    Matrix operator - (const Matrix<T, rows, cols>& other)
+    Matrix operator - (const Matrix<T, rows, cols>& other) const
     {
         Matrix<T, rows, cols> tmp_mat;
         for (int i = 0; i < rows; i++) {
@@ -170,7 +173,7 @@ public:
     }
 
     template<int p>
-    Matrix<T, rows, p> operator * (const Matrix<T, cols, p>& other)
+    Matrix<T, rows, p> operator * (const Matrix<T, cols, p>& other) const
     {
         Matrix<T, rows, p> tmp_mat;
         T sum = 0;
@@ -186,7 +189,7 @@ public:
         return tmp_mat;
     }
 
-    Matrix<T, rows, cols> operator * (T scalar)
+    Matrix<T, rows, cols> operator * (T scalar) const
     {
         Matrix<T, rows, cols> tmp_mat;
         for (int i = 0; i < rows_; i++) {
@@ -197,7 +200,7 @@ public:
         return tmp_mat;
     }
 
-    Matrix<T, rows, cols> operator / (T scalar)
+    Matrix<T, rows, cols> operator / (T scalar) const
     {
         if (std::abs(scalar - .0) < 1e-9)
             throw "ZERO_DEVIDE_ERROR";
@@ -244,6 +247,17 @@ public:
     }
 
     T norm()
+    {
+        T n = 0;
+        for (int i = 0; i < rows_; i++) {
+            for (int j = 0; j < cols_; j++) {
+                n += (*this)(i, j) * (*this)(i, j);
+            }
+        }
+        return std::sqrt(n);
+    }
+
+    T norm() const
     {
         T n = 0;
         for (int i = 0; i < rows_; i++) {
@@ -400,76 +414,7 @@ private:
     }
 };
 
-
-void test(void)
-{
-    Matrix<double, 4, 3> A({{1, 2, 3},
-                            {4, 5, 6},
-                            {7, 8, 9},
-                            {10, 11, 12}});
-    
-    Matrix<double, 4, 3> B;
-    B = A;
-
-    Matrix<double, 4, 3> C(B);
-
-    A(1, 1) = 13;
-
-    std::cout << "A:" << std::endl << A << std::endl;
-    std::cout << "B:" << std::endl << B << std::endl;
-    std::cout << "C:" << std::endl << C << std::endl;
-    std::cout << "B.block<2, 1>(1, 1)" << std::endl << B.block<2, 1>(1, 1) << std::endl;
-
-    B.block<2, 1>(1, 1) = Matrix<double, 2, 1>({{954}, {79}});
-    std::cout << B << std::endl;
-
-    std::cout << "A + B:" << std::endl << A + B << std::endl;
-    std::cout << "A - B:" << std::endl << A - B << std::endl;
-    Matrix<double, 3, 3> D;
-    D = A.transpose() * A;
-    std::cout << "D = A.transpose() * A:" << std::endl << D << std::endl;
-    std::cout << "D.row(1): " << std::endl << D.row(1) << std::endl;
-    std::cout << "D.col(1): " << std::endl << D.col(1) << std::endl;
-    std::cout << "D.col(1).norm(): " << std::endl << D.col(1).norm() << std::endl << std::endl;
-    std::cout << "D.col(1) / D.col(1).norm(): " << std::endl << D.col(1) / D.col(1).norm() << std::endl;
-            
-    auto QR = A.qrDecompose();
-    auto Q = QR.first;
-    auto R = QR.second;
-    auto b = Matrix<double, 4, 1>({{3}, {6}, {9}, {12}});
-    auto x = A.solveUsingHouseholderQR(b);
-
-    std::cout << "Q:" << std::endl << Q << std::endl;
-    std::cout << "R:" << std::endl << R << std::endl;
-    std::cout << "QR:" << std::endl << Q * R << std::endl;
-    std::cout << "QTQ:" << std::endl << Q.transpose() * Q << std::endl;
-
-    std::cout << "x:" << std::endl << x << std::endl;
-    std::cout << "Ax:" << std::endl << A * x << std::endl;
-    std::cout << "b:" << std::endl << b << std::endl;
-
-    Matrix<double, 4, 4> U;
-    Matrix<double, 4, 3> C0;
-    Matrix<double, 3, 3> V;
-    A.svdDecompose(10, &U, &C0, &V);
-    std::cout << "U:" << std::endl << U << std::endl;
-    std::cout << "C:" << std::endl << C0 << std::endl;
-    std::cout << "V:" << std::endl << V << std::endl;
-    std::cout << "UCVT:" << std::endl << U * C0 * V.transpose() << std::endl;
-    std::cout << "UTU:" << std::endl << U.transpose() * U << std::endl;
-    std::cout << "VTV:" << std::endl << V.transpose() * V << std::endl;
-
 }
 
+#endif
 
-int main(void)
-{
-    try {
-        test();
-    }
-    catch (const char* e) {
-        std::cout << e << std::endl;
-    }
-
-    return 0;
-}
